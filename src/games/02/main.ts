@@ -9,9 +9,9 @@ interface Entity {
 }
 
 interface Block extends Entity {
-  type: BlockType,
-  score: number,
-  isBroken: boolean
+  type: BlockType;
+  score: number;
+  isBroken: boolean;
 }
 
 type GameState = "start" | "playing" | "gameover" | "clear";
@@ -24,7 +24,7 @@ export const canvasSize = {
 };
 
 export const playerBarSize = {
-  width: 50,
+  width: 70,
   height: 10,
 };
 
@@ -37,17 +37,18 @@ export const blockSize = {
   height: 10,
 };
 
-
-(async()=> {
+(async () => {
   new p5((p: p5) => {
     let isDebugMode = false;
+    let isStart = true;
     let player: Entity;
+    let lastPlayerPosition: { x: number; y: number };
     let ball: Entity;
     let rank: number;
     let frame: number;
     let gameState: GameState;
     let blocks: Block[] = [];
-  
+
     const createPlayer = (): Entity => {
       return {
         x: canvasSize.x / 2,
@@ -56,14 +57,14 @@ export const blockSize = {
         dy: 4,
       };
     };
-  
+
     const createBall = (): Entity => ({
-      x: canvasSize.x - ballSize.width / 2,
-      y: ballSize.width / 2,
-      dx: 3,
-      dy: 3,
+      x: player.x,
+      y: player.y - ballSize.width,
+      dx: 0,
+      dy: 0,
     });
-  
+
     const createBlock = (x: number, y: number, type: BlockType): Block => ({
       x,
       y,
@@ -73,34 +74,38 @@ export const blockSize = {
       score: 100,
       isBroken: false,
     });
-  
+
     const init = () => {
       player = createPlayer();
       ball = createBall();
       rank = 1;
       frame = 0;
       gameState = "start";
-      blocks = blockDesign.map(b => createBlock(b.x, b.y, b.type as BlockType))
+      isStart = true;
+      blocks = blockDesign.map((b) =>
+        createBlock(b.x, b.y, b.type as BlockType)
+      );
+      lastPlayerPosition = { x: player.x, y: player.y };
     };
-  
+
     const drawPlayer = (entity: Entity) => {
       p.fill("#F7F5F2");
       p.rect(entity.x, entity.y, playerBarSize.width, playerBarSize.height);
     };
-  
+
     const drawBall = (entity: Entity) => {
       p.fill("#F7F5F2");
       p.ellipse(entity.x, entity.y, ballSize.width);
     };
-  
+
     const drawBlock = (b: Block) => {
       p.fill("#8D8DAA");
       p.rect(b.x, b.y, blockSize.width, blockSize.height);
-    }
-  
+    };
+
     const drawGame = () => {
       p.background("#DFDFDE");
-      switch(gameState) {
+      switch (gameState) {
         case "playing":
           drawPlayer(player);
           drawBall(ball);
@@ -116,9 +121,8 @@ export const blockSize = {
           drawStartScreen();
           return;
       }
-    
     };
-  
+
     const drawDebug = () => {
       const textSize = 10;
       const postion = { x: 250, y: 100 };
@@ -127,10 +131,28 @@ export const blockSize = {
       p.textAlign(p.CENTER, p.CENTER);
       p.text(`rank:${rank}`, postion.x, postion.y);
       p.text(`fps:${p.frameRate()}`, postion.x, postion.y + textSize);
-      p.text(`ball:x:${ball.x}y:${ball.y}`, postion.x, postion.y+ textSize * 2);
-      p.text(`plyaer:x:${player.x}y:${player.y}`, postion.x, postion.y + textSize*3);
+      p.text(
+        `ball:x:${ball.x}y:${ball.y}`,
+        postion.x,
+        postion.y + textSize * 2
+      );
+      p.text(
+        `plyaer:x:${player.x}y:${player.y}`,
+        postion.x,
+        postion.y + textSize * 3
+      );
+      p.text(
+        `lastPlyaer:x:${lastPlayerPosition.x}y:${lastPlayerPosition.y}`,
+        postion.x,
+        postion.y + textSize * 4
+      );
+      p.text(
+        `version: ${process.env.npm_package_version}`,
+        postion.x,
+        postion.y + textSize * 5
+      )
     };
-  
+
     const drawStartScreen = () => {
       const textSize = 30;
       const postion = { x: 250, y: 150 };
@@ -139,7 +161,7 @@ export const blockSize = {
       p.textAlign(p.CENTER, p.CENTER);
       p.text(`Click to Start`, postion.x, postion.y);
     };
-  
+
     const drawGameOverScreen = () => {
       const textSize = 30;
       const postion = { x: 250, y: 150 };
@@ -148,7 +170,7 @@ export const blockSize = {
       p.textAlign(p.CENTER, p.CENTER);
       p.text(`Game Over`, postion.x, postion.y);
     };
-  
+
     const drawGameClearScreen = () => {
       const textSize = 30;
       const postion = { x: 250, y: 150 };
@@ -157,7 +179,7 @@ export const blockSize = {
       p.textAlign(p.CENTER, p.CENTER);
       p.text(`Game Clear!!`, postion.x, postion.y);
     };
-  
+
     const updateBall = (ball: Entity) => {
       // ボールのx位置が画面端のとき方向を反対に
       if (
@@ -175,56 +197,97 @@ export const blockSize = {
         ball.dy = -ball.dy;
         rank = rank + 0.000001;
       }
-  
+
       let xIsHit = false;
       let yIsHit = false;
-  
-      if (ball.x >= (player.x - playerBarSize.width / 2) && ball.x <= (player.x + playerBarSize.width / 2)) {
+
+      if (
+        ball.x >= player.x - playerBarSize.width / 2 &&
+        ball.x <= player.x + playerBarSize.width / 2
+      ) {
         xIsHit = true;
       }
-      if (ball.y >= (player.y - playerBarSize.height / 2) && ball.y <= (player.y + playerBarSize.height / 2)) {
+      if (
+        ball.y >= player.y - playerBarSize.height / 2 &&
+        ball.y <= player.y + playerBarSize.height / 2
+      ) {
         yIsHit = true;
       }
-  
-  
+
       if (xIsHit && yIsHit) {
+        const lastX = player.x - lastPlayerPosition.x;
+        if (p.abs(lastX) >= 5) {
+          if (Math.sign(lastX) >= 0) {
+            // 前より右に移動していた場合
+            ball.dx = p.abs(ball.dx);
+          } else {
+            // 前より左に移動していた場合
+            ball.dx = -p.abs(ball.dx);
+          }
+        }
         rank = rank + 0.000001;
-        ball.dy = -ball.dy;
+        ball.dy = -p.abs(ball.dy);
       }
-  
+
       ball.x += ball.dx;
       ball.y += ball.dy;
-  
+
       // rankシステムにより速度を上昇させる。
       ball.dx = ball.dx * rank;
       ball.dy = ball.dy * rank;
     };
-  
+
     const updateRank = () => {
       return 0.0000002;
     };
-  
-    const updateBlock = (b:Block) => {
+
+    const updateBlock = (b: Block) => {
       let xIsHit = false;
       let yIsHit = false;
-  
-      if (ball.x >= (b.x - blockSize.width / 2) && ball.x <= (b.x + blockSize.width / 2)) {
+
+      if (
+        ball.x >= b.x - blockSize.width / 2 &&
+        ball.x <= b.x + blockSize.width / 2
+      ) {
         xIsHit = true;
       } else {
         return b;
       }
-      if (ball.y >= (b.y - blockSize.height / 2) && ball.y <= (b.y + blockSize.height / 2)) {
+      if (
+        ball.y >= b.y - blockSize.height / 2 &&
+        ball.y <= b.y + blockSize.height / 2
+      ) {
         yIsHit = true;
       } else {
         return b;
       }
-  
-      b.isBroken = true;
-      ball.dy = -ball.dy;
-      rank = rank + 0.00001;
+
+      if (xIsHit && yIsHit) {
+        if (
+          b.x - blockSize.width / 2 <= ball.x &&
+          ball.x <= b.x + blockSize.width / 2
+        ) {
+          // "側面"
+          ball.dx = -ball.dx;
+        }
+        if (
+          b.y - blockSize.height / 2 <= ball.y &&
+          ball.y <= b.y + blockSize.height / 2
+        ) {
+          // "上面か底面"
+          ball.dy = -ball.dy;
+        } else {
+          ball.dx = -ball.dx;
+          ball.dy = -ball.dy;
+        }
+
+        b.isBroken = true;
+        rank = rank + 0.00001;
+      }
+
       return b;
     };
-  
+
     const updateGameState = () => {
       if (!blocks.length) {
         gameState = "clear";
@@ -232,14 +295,17 @@ export const blockSize = {
         gameState = "gameover";
       }
     };
-  
+
     const updateGame = () => {
       if (gameState === "playing") {
         updateBall(ball);
         frame++;
         rank = rank + updateRank();
-        blocks = blocks.map(updateBlock).filter(b=>!b.isBroken);
+        blocks = blocks.map(updateBlock).filter((b) => !b.isBroken);
         updateGameState();
+        if (frame % 15 === 0) {
+          lastPlayerPosition = { x: player.x, y: player.y };
+        }
       }
     };
 
@@ -256,27 +322,40 @@ export const blockSize = {
           gameState = "start";
           return;
         case "playing":
+          if (isStart) {
+            ball.dx = 3;
+            ball.dy = 3;
+            isStart = false;
+          }
           return;
       }
     };
-  
+
     const onMouseMove = (e) => {
-      if (e.screenX > canvasSize.x - playerBarSize.width / 2) {
+      if (p.pmouseX > canvasSize.x - playerBarSize.width / 2) {
         player.x = canvasSize.x - playerBarSize.width / 2;
-      } else if (e.screenX < playerBarSize.width / 2) {
+      } else if (p.pmouseX < playerBarSize.width / 2) {
         player.x = playerBarSize.width / 2;
       } else {
-        player.x = e.screenX;
+        player.x = p.pmouseX;
+      }
+      if (isStart) {
+        if (p.pmouseX > canvasSize.x - playerBarSize.width / 2) {
+          ball.x = canvasSize.x - playerBarSize.width / 2;
+        } else if (p.pmouseX < playerBarSize.width / 2) {
+          ball.x = playerBarSize.width / 2;
+        } else {
+          ball.x = p.pmouseX;
+        }
       }
     };
 
     const onKeyPressed = (e) => {
       if (e.key === "1") {
         isDebugMode = !isDebugMode;
-      } 
+      }
+    };
 
-    }
-  
     p.setup = () => {
       p.frameRate(60);
       p.createCanvas(canvasSize.x, canvasSize.y);
@@ -284,26 +363,25 @@ export const blockSize = {
       p.ellipseMode(p.CENTER);
       init();
     };
-  
+
     p.draw = () => {
       drawGame();
       updateGame();
-      if (isDebugMode) {drawDebug();}
+      if (isDebugMode) {
+        drawDebug();
+      }
     };
-  
+
     p.mousePressed = (e) => {
       onMousePress(e);
     };
-  
+
     p.mouseMoved = (e) => {
       onMouseMove(e);
     };
 
     p.keyPressed = (e) => {
       onKeyPressed(e);
-    }
-    
+    };
   });
-  
 })();
-
