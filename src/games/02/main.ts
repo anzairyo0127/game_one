@@ -202,14 +202,14 @@ export const blockSize = {
       let yIsHit = false;
 
       if (
-        ball.x >= player.x - playerBarSize.width / 2 &&
-        ball.x <= player.x + playerBarSize.width / 2
+        ball.x + ballSize.width / 2 >= player.x - playerBarSize.width / 2 &&
+        ball.x - ballSize.width / 2 <= player.x + playerBarSize.width / 2
       ) {
         xIsHit = true;
       }
       if (
-        ball.y >= player.y - playerBarSize.height / 2 &&
-        ball.y <= player.y + playerBarSize.height / 2
+        ball.y + ballSize.width / 2 >= player.y - playerBarSize.height / 2 &&
+        ball.y - ballSize.width / 2 <= player.y + playerBarSize.height / 2
       ) {
         yIsHit = true;
       }
@@ -246,16 +246,16 @@ export const blockSize = {
       let yIsHit = false;
 
       if (
-        ball.x >= b.x - blockSize.width / 2 &&
-        ball.x <= b.x + blockSize.width / 2
+        ball.x + ballSize.width / 2 >= b.x - blockSize.width / 2 &&
+        ball.x - ballSize.width / 2 <= b.x + blockSize.width / 2
       ) {
         xIsHit = true;
       } else {
         return b;
       }
       if (
-        ball.y >= b.y - blockSize.height / 2 &&
-        ball.y <= b.y + blockSize.height / 2
+        ball.y + ballSize.width / 2 >= b.y - blockSize.height / 2 &&
+        ball.y - ballSize.width / 2 <= b.y + blockSize.height / 2
       ) {
         yIsHit = true;
       } else {
@@ -263,18 +263,25 @@ export const blockSize = {
       }
 
       if (xIsHit && yIsHit) {
+        /**
+         *   ┌──────────────────┐
+         *   |                  |
+         *   |        *         |
+         *   |                  |
+         *   └──────────────────┘
+         */
         if (
-          b.x - blockSize.width / 2 <= ball.x &&
-          ball.x <= b.x + blockSize.width / 2
+          b.x + blockSize.width / 2 <= ball.x + ballSize.width / 2  &&
+          ball.x - ballSize.width / 2 <= b.x + blockSize.width / 2
         ) {
-          // "側面"
+          console.log("側面");
           ball.dx = -ball.dx;
         }
         if (
-          b.y - blockSize.height / 2 <= ball.y &&
-          ball.y <= b.y + blockSize.height / 2
+          b.y - blockSize.height / 2 <= ball.y + ballSize.width / 2 &&
+          ball.y - ballSize.width / 2 <= b.y + blockSize.height / 2
         ) {
-          // "上面か底面"
+          console.log("上面か底面");
           ball.dy = -ball.dy;
         } else {
           ball.dx = -ball.dx;
