@@ -125,12 +125,12 @@ export const blockSize = {
 
     const drawDebug = () => {
       const textSize = 10;
-      const postion = { x: 250, y: 100 };
+      const postion = { x: 0, y: 10 };
       p.fill("#000000");
       p.textSize(textSize);
-      p.textAlign(p.CENTER, p.CENTER);
+      p.textAlign(p.LEFT);
       p.text(`rank:${rank}`, postion.x, postion.y);
-      p.text(`fps:${p.frameRate()}`, postion.x, postion.y + textSize);
+      p.text(`fps:${p.frameRate().toFixed(1)}`, postion.x, postion.y + textSize);
       p.text(
         `ball:x:${ball.x}y:${ball.y}`,
         postion.x,
@@ -187,7 +187,7 @@ export const blockSize = {
         ball.x <= ballSize.width / 2
       ) {
         ball.dx = -ball.dx;
-        rank = rank + 0.000001;
+        rank = rank + 0.0000001;
       }
       // ボールのy位置が画面端のとき方向を反対に
       if (
@@ -195,7 +195,7 @@ export const blockSize = {
         ball.y <= ballSize.width / 2
       ) {
         ball.dy = -ball.dy;
-        rank = rank + 0.000001;
+        rank = rank + 0.0000001;
       }
 
       let xIsHit = false;
@@ -225,7 +225,7 @@ export const blockSize = {
             ball.dx = -p.abs(ball.dx);
           }
         }
-        rank = rank + 0.000001;
+        rank = rank + 0.0000001;
         ball.dy = -p.abs(ball.dy);
       }
 
@@ -238,7 +238,7 @@ export const blockSize = {
     };
 
     const updateRank = () => {
-      return 0.0000002;
+      return 0.0000001;
     };
 
     const updateBlock = (b: Block) => {
@@ -289,7 +289,7 @@ export const blockSize = {
         }
 
         b.isBroken = true;
-        rank = rank + 0.00001;
+        rank = rank + 0.000001;
       }
 
       return b;
@@ -339,20 +339,20 @@ export const blockSize = {
     };
 
     const onMouseMove = (e) => {
-      if (p.pmouseX > canvasSize.x - playerBarSize.width / 2) {
+      if (p.mouseX > canvasSize.x - playerBarSize.width / 2) {
         player.x = canvasSize.x - playerBarSize.width / 2;
-      } else if (p.pmouseX < playerBarSize.width / 2) {
+      } else if (p.mouseX < playerBarSize.width / 2) {
         player.x = playerBarSize.width / 2;
       } else {
-        player.x = p.pmouseX;
+        player.x = p.mouseX;
       }
       if (isStart) {
-        if (p.pmouseX > canvasSize.x - playerBarSize.width / 2) {
+        if (p.mouseX > canvasSize.x - playerBarSize.width / 2) {
           ball.x = canvasSize.x - playerBarSize.width / 2;
-        } else if (p.pmouseX < playerBarSize.width / 2) {
+        } else if (p.mouseX < playerBarSize.width / 2) {
           ball.x = playerBarSize.width / 2;
         } else {
-          ball.x = p.pmouseX;
+          ball.x = p.mouseX;
         }
       }
     };
@@ -390,5 +390,10 @@ export const blockSize = {
     p.keyPressed = (e) => {
       onKeyPressed(e);
     };
+
+    p.touchMoved = (e) => {
+      onMouseMove(e);
+    };
+
   });
 })();
