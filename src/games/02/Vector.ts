@@ -92,8 +92,8 @@ export class Block extends Entity {
   isBroken: boolean;
 
   public static size = {
-    width: 30,
-    height: 10,
+    width: 60,
+    height: 30,
   };
 
   public static halfSize = {
