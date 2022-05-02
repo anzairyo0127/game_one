@@ -1,113 +1,69 @@
 import p5 from "p5";
 import { blockDesign } from "./blockDesign";
-
-interface Entity {
-  x: number;
-  y: number;
-  dx: number;
-  dy: number;
-}
-
-interface Block extends Entity {
-  type: BlockType;
-  score: number;
-  isBroken: boolean;
-}
+import { Vector, Ball, Entity, Block, Racket, BlockType } from "./Vector";
 
 type GameState = "start" | "playing" | "gameover" | "clear";
-
-type BlockType = "normal" | "strong" | "powerup";
 
 export const canvasSize = {
   x: 480,
   y: 560,
 };
 
-export const playerBarSize = {
-  width: 70,
-  height: 10,
-};
-
-export const ballSize = {
-  width: 10,
-};
-
-export const blockSize = {
-  width: 30,
-  height: 10,
-};
-
 (async () => {
   new p5((p: p5) => {
     let isDebugMode = false;
     let isStart = true;
-    let player: Entity;
-    let lastPlayerPosition: { x: number; y: number };
+    let racket: Racket;
+    let lastRacketP: { x: number; y: number };
     let ball: Entity;
     let rank: number;
     let frame: number;
     let gameState: GameState;
     let blocks: Block[] = [];
-
-    const createPlayer = (): Entity => {
-      return {
-        x: canvasSize.x / 2,
-        y: canvasSize.y * 0.9,
-        dx: 4,
-        dy: 4,
-      };
-    };
-
-    const createBall = (): Entity => ({
-      x: player.x,
-      y: player.y - ballSize.width,
-      dx: 0,
-      dy: 0,
-    });
-
-    const createBlock = (x: number, y: number, type: BlockType): Block => ({
-      x,
-      y,
-      dx: 0,
-      dy: 0,
-      type,
-      score: 100,
-      isBroken: false,
-    });
+    const FPS = 60;
 
     const init = () => {
-      player = createPlayer();
-      ball = createBall();
+      racket = new Racket( 
+        new Vector(canvasSize.x / 2, canvasSize.y * 0.9),
+        new Vector(4, 4)
+      );
+      ball = new Ball(
+        new Vector(racket.p.x, racket.p.y - Ball.radius * 2 - 1),
+        new Vector(0,0),
+      );
       rank = 1;
       frame = 0;
       gameState = "start";
       isStart = true;
       blocks = blockDesign.map((b) =>
-        createBlock(b.x, b.y, b.type as BlockType)
+        new Block(
+          new Vector(b.x, b.y),
+          new Vector(0,0),
+          b.type as BlockType)
       );
-      lastPlayerPosition = { x: player.x, y: player.y };
+      lastRacketP = { x: racket.p.x, y: racket.p.y };
     };
 
-    const drawPlayer = (entity: Entity) => {
+    const drawPlayer = (racket: Racket) => {
       p.fill("#F7F5F2");
-      p.rect(entity.x, entity.y, playerBarSize.width, playerBarSize.height);
+      p.rect(racket.p.x, racket.p.y, Racket.size.width, Racket.size.height);
     };
 
-    const drawBall = (entity: Entity) => {
+    const drawBall = (ball: Ball) => {
       p.fill("#F7F5F2");
-      p.ellipse(entity.x, entity.y, ballSize.width);
+      p.ellipse(ball.p.x, ball.p.y, Ball.radius * 2);
     };
 
     const drawBlock = (b: Block) => {
       p.fill("#8D8DAA");
-      p.rect(b.x, b.y, blockSize.width, blockSize.height);
+      p.rect(b.p.x, b.p.y, Block.size.width, Block.size.height);
     };
 
     const drawGame = () => {
       p.background("#DFDFDE");
       switch (gameState) {
         case "playing":
-          drawPlayer(player);
+          drawPlayer(racket);
           drawBall(ball);
           blocks.forEach(drawBlock);
           return;
@@ -124,33 +80,23 @@ export const blockSize = {
     };
 
     const drawDebug = () => {
-      const textSize = 10;
-      const postion = { x: 0, y: 10 };
+      const textSize = 8;
+      const postion = { x: 0, y: 0 };
       p.fill("#000000");
       p.textSize(textSize);
-      p.textAlign(p.LEFT);
-      p.text(`rank:${rank}`, postion.x, postion.y);
-      p.text(`fps:${p.frameRate().toFixed(1)}`, postion.x, postion.y + textSize);
+      p.textAlign(p.LEFT, p.TOP);
       p.text(
-        `ball:x:${ball.x}y:${ball.y}`,
-        postion.x,
-        postion.y + textSize * 2
-      );
-      p.text(
-        `plyaer:x:${player.x}y:${player.y}`,
-        postion.x,
-        postion.y + textSize * 3
-      );
-      p.text(
-        `lastPlyaer:x:${lastPlayerPosition.x}y:${lastPlayerPosition.y}`,
-        postion.x,
-        postion.y + textSize * 4
-      );
-      p.text(
-        `version: ${process.env.npm_package_version}`,
-        postion.x,
-        postion.y + textSize * 5
-      )
+`rank:${rank}
+fps:${p.frameRate().toFixed(1)}
+ball:x:${ball.p.x.toFixed(1)}y:${ball.p.y.toFixed(1)}
+ball_vector:x:${ball.v.x.toFixed(3)}y:${ball.v.y.toFixed(3)}
+plyaer:x:${racket.p.x.toFixed(1)}y:${racket.p.y.toFixed(1)}
+lastPlyaer:x:${lastRacketP.x.toFixed(1)}y:${lastRacketP.y.toFixed(1)}
+game state: ${gameState}
+version: ${process.env.npm_package_version}
+blocks:${blocks.length}`,
+
+postion.x, postion.y);
     };
 
     const drawStartScreen = () => {
@@ -180,82 +126,62 @@ export const blockSize = {
       p.text(`Game Clear!!`, postion.x, postion.y);
     };
 
-    const updateBall = (ball: Entity) => {
+    const updateBall = (ball: Ball) => {
       // ボールのx位置が画面端のとき方向を反対に
       if (
-        ball.x >= canvasSize.x - ballSize.width / 2 ||
-        ball.x <= ballSize.width / 2
+        ball.p.x > canvasSize.x - Ball.radius ||
+        ball.p.x < Ball.radius
       ) {
-        ball.dx = -ball.dx;
-        rank = rank + 0.0000001;
+        ball.v.x = -ball.v.x;
       }
-      // ボールのy位置が画面端のとき方向を反対に
-      if (
-        ball.y >= canvasSize.y - ballSize.width / 2 ||
-        ball.y <= ballSize.width / 2
-      ) {
-        ball.dy = -ball.dy;
-        rank = rank + 0.0000001;
+      // ボールのy位置が画面上部のとき方向を反対に
+      if (ball.p.y < Ball.radius) {
+        ball.v.y = -ball.v.y;
       }
 
       let xIsHit = false;
       let yIsHit = false;
 
       if (
-        ball.x + ballSize.width / 2 >= player.x - playerBarSize.width / 2 &&
-        ball.x - ballSize.width / 2 <= player.x + playerBarSize.width / 2
+        ball.p.x + Ball.radius >= racket.p.x - Racket.halfSize.width &&
+        ball.p.x - Ball.radius <= racket.p.x + Racket.halfSize.width
       ) {
         xIsHit = true;
       }
       if (
-        ball.y + ballSize.width / 2 >= player.y - playerBarSize.height / 2 &&
-        ball.y - ballSize.width / 2 <= player.y + playerBarSize.height / 2
+        ball.p.y + Ball.radius >= racket.p.y - Racket.halfSize.height &&
+        ball.p.y - Ball.radius <= racket.p.y + Racket.halfSize.height
       ) {
         yIsHit = true;
       }
 
       if (xIsHit && yIsHit) {
-        const lastX = player.x - lastPlayerPosition.x;
-        if (p.abs(lastX) >= 5) {
-          if (Math.sign(lastX) >= 0) {
-            // 前より右に移動していた場合
-            ball.dx = p.abs(ball.dx);
-          } else {
-            // 前より左に移動していた場合
-            ball.dx = -p.abs(ball.dx);
-          }
-        }
-        rank = rank + 0.0000001;
-        ball.dy = -p.abs(ball.dy);
+        // ヒット時
+        const w = ball.p.sub(racket.p);
+        const r = ball.v.refrect(w);
+        ball.v = r;
+        ball.v.y = -p.abs(ball.v.y)
+        // めり込み防止
       }
 
-      ball.x += ball.dx;
-      ball.y += ball.dy;
-
-      // rankシステムにより速度を上昇させる。
-      ball.dx = ball.dx * rank;
-      ball.dy = ball.dy * rank;
+      ball.p = ball.p.add(ball.v);
     };
 
-    const updateRank = () => {
-      return 0.0000001;
-    };
-
-    const updateBlock = (b: Block) => {
+    const updateBlock = (b: Block, i:number, bs:Block[]) => {
       let xIsHit = false;
       let yIsHit = false;
 
       if (
-        ball.x + ballSize.width / 2 >= b.x - blockSize.width / 2 &&
-        ball.x - ballSize.width / 2 <= b.x + blockSize.width / 2
+        ball.p.x + Ball.radius >= b.p.x - Block.halfSize.width &&
+        ball.p.x - Ball.radius <= b.p.x + Block.halfSize.width
       ) {
         xIsHit = true;
       } else {
         return b;
       }
       if (
-        ball.y + ballSize.width / 2 >= b.y - blockSize.height / 2 &&
-        ball.y - ballSize.width / 2 <= b.y + blockSize.height / 2
+        ball.p.y + Ball.radius >= b.p.y - Block.halfSize.height &&
+        ball.p.y - Ball.radius <= b.p.y + Block.halfSize.height
       ) {
         yIsHit = true;
       } else {
@@ -270,26 +196,12 @@ export const blockSize = {
          *   |                  |
          *   └──────────────────┘
          */
-        if (
-          b.x + blockSize.width / 2 <= ball.x + ballSize.width / 2  &&
-          ball.x - ballSize.width / 2 <= b.x + blockSize.width / 2
-        ) {
-          console.log("側面");
-          ball.dx = -ball.dx;
-        }
-        if (
-          b.y - blockSize.height / 2 <= ball.y + ballSize.width / 2 &&
-          ball.y - ballSize.width / 2 <= b.y + blockSize.height / 2
-        ) {
-          console.log("上面か底面");
-          ball.dy = -ball.dy;
-        } else {
-          ball.dx = -ball.dx;
-          ball.dy = -ball.dy;
-        }
+        const w = ball.p.sub(b.p);
+        const r = ball.v.refrect(w);
+        ball.v = r;
 
-        b.isBroken = true;
-        rank = rank + 0.000001;
+        b.brake();
+        bs.splice(i, 1);
       }
 
       return b;
@@ -298,7 +210,7 @@ export const blockSize = {
     const updateGameState = () => {
       if (!blocks.length) {
         gameState = "clear";
-      } else if (ball.y >= canvasSize.y - ballSize.width) {
+      } else if (ball.p.y >= canvasSize.y - Ball.radius) {
         gameState = "gameover";
       }
     };
@@ -307,11 +219,10 @@ export const blockSize = {
       if (gameState === "playing") {
         updateBall(ball);
         frame++;
-        rank = rank + updateRank();
-        blocks = blocks.map(updateBlock).filter((b) => !b.isBroken);
+        blocks.forEach(updateBlock);
         updateGameState();
         if (frame % 15 === 0) {
-          lastPlayerPosition = { x: player.x, y: player.y };
+          lastRacketP = { x: racket.p.x, y: racket.p.y };
         }
       }
     };
@@ -330,8 +241,8 @@ export const blockSize = {
           return;
         case "playing":
           if (isStart) {
-            ball.dx = 3;
-            ball.dy = 3;
+            ball.v.x = 5;
+            ball.v.y = -5;
             isStart = false;
           }
           return;
@@ -339,20 +250,20 @@ export const blockSize = {
     };
 
     const onMouseMove = (e) => {
-      if (p.mouseX > canvasSize.x - playerBarSize.width / 2) {
-        player.x = canvasSize.x - playerBarSize.width / 2;
-      } else if (p.mouseX < playerBarSize.width / 2) {
-        player.x = playerBarSize.width / 2;
+      if (p.mouseX > canvasSize.x - Racket.halfSize.width) {
+        racket.p.x = canvasSize.x - Racket.halfSize.width;
+      } else if (p.mouseX < Racket.halfSize.width) {
+        racket.p.x = Racket.halfSize.width;
       } else {
-        player.x = p.mouseX;
+        racket.p.x = p.mouseX;
       }
       if (isStart) {
-        if (p.mouseX > canvasSize.x - playerBarSize.width / 2) {
-          ball.x = canvasSize.x - playerBarSize.width / 2;
-        } else if (p.mouseX < playerBarSize.width / 2) {
-          ball.x = playerBarSize.width / 2;
+        if (p.mouseX > canvasSize.x - Racket.halfSize.width) {
+          ball.p.x = canvasSize.x - Racket.halfSize.width;
+        } else if (p.mouseX < Racket.halfSize.width) {
+          ball.p.x = Racket.halfSize.width;
         } else {
-          ball.x = p.mouseX;
+          ball.p.x = p.mouseX;
         }
       }
     };
