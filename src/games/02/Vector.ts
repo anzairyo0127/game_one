@@ -70,21 +70,53 @@ export class Entity {
 }
 
 export class Racket extends Entity {
-  public static size = {
+  public powerupTimer = 0;
+  public powerUp: Powerup = "suppin";
+  private static __size = {
     width: 70,
     height: 10,
   };
-  public static halfSize = {
-    width: Racket.size.width / 2,
-    height: Racket.size.height / 2,
+  private static __halfSize = {
+    width: Racket.__size.width / 2,
+    height: Racket.__size.height / 2,
+  };
+
+  public size = Racket.__size;
+  public halfSize = Racket.__halfSize;
+
+  public toSuppin = () => {
+    this.size =  Racket.__size;
+    this.halfSize = Racket.__halfSize;
+    this.powerUp = "suppin";
   }
+
+  private toExpand = () => {
+    this.size = { width: Racket.__size.width * 2, height: Racket.__size.height };
+    this.halfSize = { width: this.size.width / 2, height: Racket.__size.height / 2 };
+    this.powerUp = "expand";
+  }
+
+  public getPowerup = (powerUp: Powerup) => {
+    this.powerupTimer = 30 * 60;
+    switch (powerUp) {
+      case "expand":
+        this.toExpand();
+        return;
+      case "suppin":
+        this.toSuppin();
+        return;
+    }
+  };
 }
 
 export class Ball extends Entity {
-  public static radius = 5; //半径
+  /**
+   * ボールの半径
+   */
+  public static radius = 5;
 }
 
-export type BlockType = "normal" | "strong" | "powerup";
+export type BlockType = "normal" | "strong" | "powerup" | "unbreakble";
 
 export class Block extends Entity {
   type: BlockType;
@@ -101,13 +133,41 @@ export class Block extends Entity {
     height: Block.size.height / 2,
   }
 
+  public vitality = 1;
+
   constructor(p: Vector, v: Vector, _type: BlockType) {
     super(p, v);
     this.type = _type;
+    this.setVitality(this.type);
   }
 
   public brake = () => {
     this.isBroken = true;
   }
 
+  private setVitality = (type: BlockType) => {
+    switch (type) {
+      case "normal":
+      case "powerup":
+        this.vitality = 1;
+        return;
+      case "strong":
+        this.vitality = 5;
+        return;
+      case "unbreakble":
+        this.vitality = 0;
+        return;
+    }
+  }
+
+}
+
+type Powerup = "expand" | "suppin";
+
+export class PowerupItem extends Entity {
+  public item : Powerup = null;
+  constructor (_p: Vector, _v: Vector, _item:Powerup) {
+    super(_p, _v);
+    this.item = _item;
+  }
 }
