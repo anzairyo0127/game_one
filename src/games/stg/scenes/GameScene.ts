@@ -1,13 +1,14 @@
 import Phaser from "phaser";
 import { Fighter } from "../chars/Fighter";
 import { FighterShot, FighterShotGroup } from "../objects/FighterShot";
-import { DiagonalEnemy, DiagonalEnemyGroup } from "../chars/DiaglonalEnemy";
+import { DiagonalEnemyGroup } from "../chars/DiaglonalEnemy";
 import { BaseEnemy, BaseEnemyGroup } from "../chars/BaseEnemy";
+import { FallingEnemyGroup } from "../chars/FallingEnemy";
 
 export class GameScene extends Phaser.Scene {
   public fighter: Fighter;
   private enemyGroups: BaseEnemyGroup[];
-  private hasSpawnedEnemies = false;
+  protected score: number = 10;
 
   constructor() {
     super({ key: "GameScene", active: false });
@@ -34,13 +35,12 @@ export class GameScene extends Phaser.Scene {
       )
     );
     this.physics.add.existing(this.fighter);
-    this.enemyGroups = [new DiagonalEnemyGroup(this)];
+    this.enemyGroups = [
+      new DiagonalEnemyGroup(this),
+      new FallingEnemyGroup(this),
+    ];
     this.enemyGroups.forEach((enemyGroup) => {
       this.add.existing(enemyGroup);
-    });
-  }
-  update(time: number, delta: number) {
-    this.enemyGroups.forEach((enemyGroup) => {
       this.physics.add.collider(
         enemyGroup,
         this.fighter.shots,
@@ -48,6 +48,11 @@ export class GameScene extends Phaser.Scene {
         null,
         this
       );
+    });
+  }
+
+  update(time: number, delta: number) {
+    this.enemyGroups.forEach((enemyGroup) => {
       enemyGroup.spawnTimer += delta;
       if (enemyGroup.spawnTimer > enemyGroup.spawnInterval) {
         (enemyGroup as DiagonalEnemyGroup).spawn(10, 10);
@@ -55,8 +60,11 @@ export class GameScene extends Phaser.Scene {
       }
     });
   }
+
   onEnemyShotCollision(enemy: BaseEnemy, shot: FighterShot) {
-    enemy.takeDamage(1);
-    shot.destroy();
+    if (enemy.y >= 100) {
+      enemy.takeDamage(1);
+      shot.hit();
+    }
   }
 }

@@ -11,6 +11,7 @@ export class Fighter extends Phaser.Physics.Arcade.Sprite {
   private AKey: Phaser.Input.Keyboard.Key; // 左
   private DKey: Phaser.Input.Keyboard.Key; // 右
   private SKey: Phaser.Input.Keyboard.Key; // 下
+  private ShotKey: Phaser.Input.Keyboard.Key; // ショットキー
 
   constructor(
     scene: Phaser.Scene,
@@ -21,6 +22,8 @@ export class Fighter extends Phaser.Physics.Arcade.Sprite {
     this.setPosition(position.x, position.y);
     this.shots = shots;
     scene.physics.add.existing(this);
+    this.body.setSize(5, 5);
+    this.body.setOffset(14, 18);
 
     // キーボード入力の設定
     this.cursors = this.scene.input.keyboard.createCursorKeys();
@@ -32,6 +35,9 @@ export class Fighter extends Phaser.Physics.Arcade.Sprite {
     );
     this.SKey = this.scene.input.keyboard.addKey(
       Phaser.Input.Keyboard.KeyCodes.S
+    );
+    this.ShotKey = this.scene.input.keyboard.addKey(
+      Phaser.Input.Keyboard.KeyCodes.SPACE
     );
   }
 
@@ -62,10 +68,7 @@ export class Fighter extends Phaser.Physics.Arcade.Sprite {
     }
 
     // ショット発射
-    if (
-      this.cursors.space.isDown &&
-      time - this.lastShotTime > this.shotInterval
-    ) {
+    if (this.ShotKey.isDown && time - this.lastShotTime > this.shotInterval) {
       this.lastShotTime = time;
       this.fire();
     }

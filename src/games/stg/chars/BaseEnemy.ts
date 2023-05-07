@@ -1,8 +1,11 @@
+import { GameScene } from "../scenes/GameScene";
+
 export class BaseEnemy extends Phaser.Physics.Arcade.Sprite {
   protected speed: number;
   protected health: number;
+  protected score: number;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, textureId: string) {
+  constructor(scene: GameScene, x: number, y: number, textureId: string) {
     super(scene, x, y, textureId);
     scene.physics.add.existing(this);
     this.speed = 0.3;
@@ -12,15 +15,15 @@ export class BaseEnemy extends Phaser.Physics.Arcade.Sprite {
   preUpdate(time: number, delta: number) {
     super.preUpdate(time, delta);
     // 継承したクラスでこのメソッドをオーバーライドします
+    this.checkOutOfBounds();
   }
   update(): void {
     super.update();
-    this.checkOutOfBounds();
   }
   takeDamage(damage: number) {
     this.health -= damage;
     if (this.health <= 0) {
-      this.destroy();
+      this.die();
     }
   }
   private checkOutOfBounds() {

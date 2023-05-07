@@ -1,3 +1,4 @@
+import { GameScene } from "../scenes/GameScene";
 import { BaseEnemy, BaseEnemyGroup } from "./BaseEnemy";
 
 export class DiagonalEnemy extends BaseEnemy {
@@ -5,8 +6,10 @@ export class DiagonalEnemy extends BaseEnemy {
   private readonly centerX: number;
   private readonly textureId: string = "hishi";
 
-  constructor(scene: Phaser.Scene, x: number, y: number) {
+  constructor(scene: GameScene, x: number, y: number) {
     super(scene, x, y, "hishi");
+    this.setActive(false);
+    this.setVisible(false);
     // パラメータを設定
     this.descentThreshold = this.scene.scale.height * 0.3; // 画面の%まで下降
     this.centerX = this.scene.scale.width / 2; // 画面の中心X座標
@@ -29,6 +32,7 @@ export class DiagonalEnemy extends BaseEnemy {
   }
   spawn(x: number, y: number) {
     this.body.reset(x, y);
+    this.scene.physics.add.existing(this);
     this.setActive(true);
     this.setVisible(true);
   }

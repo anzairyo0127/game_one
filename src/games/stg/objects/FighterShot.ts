@@ -10,7 +10,7 @@ export class FighterShotGroup extends Phaser.Physics.Arcade.Group {
       frameQuantity: 3, // Create 30 instances in the pool
       active: false,
       visible: false,
-      key: FighterShot.texture,
+      key: "fighterShots",
     });
   }
 
@@ -28,34 +28,38 @@ export class FighterShotGroup extends Phaser.Physics.Arcade.Group {
 }
 
 export class FighterShot extends Phaser.Physics.Arcade.Sprite {
-  private speed: number;
+  private speed: number = -600;
   static texture = "bullet";
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y, FighterShot.texture);
+    this.setActive(false);
+    this.setVisible(false);
   }
+
+  hit = () => {
+    this.setActive(false);
+    this.setVisible(false);
+  };
 
   preUpdate(time: number, delta: number) {
     super.preUpdate(time, delta);
-    if (this.y <= 0) {
-      this.setActive(false);
-      this.setVisible(false);
-    }
     this.checkOutOfBounds();
   }
 
   fire(x: number, y: number) {
     this.body.reset(x, y);
+    this.scene.physics.add.existing(this);
     this.setActive(true);
     this.setVisible(true);
-    this.setVelocityY(-700);
+    this.setVelocityY(this.speed);
   }
   private checkOutOfBounds() {
     // 画面外に出たかどうかをチェック
     if (
-      this.x < -this.width ||
-      this.x > this.scene.scale.width + this.width ||
-      this.y < -this.height ||
-      this.y > this.scene.scale.height + this.height
+      this.x < 0 ||
+      this.x > this.scene.scale.width ||
+      this.y < 0 ||
+      this.y > this.scene.scale.height
     ) {
       // 画面外に出た場合、破棄
       this.setActive(false);
